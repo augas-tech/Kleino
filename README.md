@@ -81,7 +81,7 @@ Etapas que corren en **todas las ramas**:
 Solo en la rama **`production`**:
 
 8. **Deploy** - reemplaza el contenedor `kleino`, publicado en `127.0.0.1:4102` (Nginx lo expone en `https://kleino.frubilarz.cl`)
-9. **Health Check** - espera hasta 240 s a que `http://127.0.0.1:4102/health` responda 200 (las migraciones corren en el arranque del contenedor)
+9. **Health Check** - espera hasta 180 s a que `/health` responda 200 dentro del contenedor (`docker exec kleino curl http://127.0.0.1/health`); las migraciones corren en el arranque del contenedor
 
 El PostgreSQL de test se destruye siempre al terminar el build (`post { always }`).
 

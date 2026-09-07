@@ -130,18 +130,21 @@ pipeline {
                 // Las migraciones las corre bin/docker-entrypoint (`rails db:prepare`) antes
                 // de levantar `rails server`. No se lanza un `docker exec db:migrate` aparte:
                 // en el droplet de 2 GB dos boots de Rails en paralelo terminan con uno
-                // matado por memoria (exit 137, visto en condotrack y balancefood). Si
-                // db:prepare falla, el contenedor muere y este health check falla el build.
-                // Un arranque en frio (db:prepare + Puma + Thruster) en este droplet puede
-                // pasar de 2 min, asi que se esperan hasta 240 s. Si el contenedor muere
-                // antes, se corta de inmediato.
+                // matado por memoria (exit 137). Si db:prepare falla, el contenedor muere y
+                // este health check falla el build.
+                //
+                // El curl se ejecuta DENTRO del contenedor de la app (Thruster escucha en el
+                // puerto 80 ahi adentro). Jenkins corre en su propio contenedor, asi que su
+                // 127.0.0.1 no es el del host y `curl http://127.0.0.1:$DEPLOY_PORT` nunca
+                // conecta aunque la app este arriba (asi fallaron los 80 intentos del
+                // build production #1 de kleino y todos los de condotrack y balancefood).
                 sh '''
-                    for i in $(seq 1 80); do
-                      if curl -fsS "http://127.0.0.1:$DEPLOY_PORT/health"; then echo; break; fi
+                    for i in $(seq 1 60); do
+                      if docker exec "$APP_NAME" curl -fsS http://127.0.0.1/health; then echo; break; fi
                       if [ "$(docker inspect -f '{{.State.Running}}' "$APP_NAME" 2>/dev/null)" != "true" ]; then
                         echo "El contenedor $APP_NAME no esta corriendo"; docker logs --tail 50 "$APP_NAME"; exit 1
                       fi
-                      if [ "$i" = 80 ]; then echo "Timeout: $APP_NAME no respondio en 240 s"; docker logs --tail 50 "$APP_NAME"; exit 1; fi
+                      if [ "$i" = 60 ]; then echo "Timeout: $APP_NAME no respondio en 180 s"; docker logs --tail 50 "$APP_NAME"; exit 1; fi
                       sleep 3
                     done
                     # Verificacion publica a traves del reverse proxy (no bloquea si el proxy aun no esta configurado).
