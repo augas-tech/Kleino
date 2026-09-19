@@ -1,4 +1,6 @@
 Rails.application.routes.draw do
+  resource :session
+  resources :passwords, param: :token
   # Health check por defecto de Rails (200 si la app bootea sin excepciones).
   get "up" => "rails/health#show", as: :rails_health_check
 
