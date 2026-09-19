@@ -1,28 +1,31 @@
 class PasswordsController < ApplicationController
   allow_unauthenticated_access
   before_action :set_user_by_token, only: %i[ edit update ]
-  rate_limit to: 10, within: 3.minutes, only: :create, with: -> { redirect_to new_password_path, alert: "Try again later." }
+  rate_limit to: 10, within: 3.minutes, only: :create, with: -> { render json: { error: "Demasiados intentos, intenta más tarde" }, status: :too_many_requests }
 
-  def new
-  end
-
+  # POST /passwords -> envía el email de recuperación (si el usuario existe)
   def create
-    if user = User.find_by(email_address: params[:email_address])
+    if user = User.find_by(email_address: params[:email_address].to_s.strip.downcase)
       PasswordsMailer.reset(user).deliver_later
     end
 
-    redirect_to new_session_path, notice: "Password reset instructions sent (if user with that email address exists)."
+    render json: { message: "Si el email existe, enviamos las instrucciones para restablecer la contraseña" }
   end
 
+  # GET /passwords/:token/edit -> valida que el token sea vigente
   def edit
+    render json: { valid: true }
   end
 
+  # PATCH/PUT /passwords/:token -> cambia la contraseña
   def update
+    params.require(:password)
+
     if @user.update(params.permit(:password, :password_confirmation))
       @user.sessions.destroy_all
-      redirect_to new_session_path, notice: "Password has been reset."
+      render json: { message: "Contraseña actualizada" }
     else
-      redirect_to edit_password_path(params[:token]), alert: "Passwords did not match."
+      render json: { errors: @user.errors.full_messages }, status: :unprocessable_content
     end
   end
 
@@ -30,6 +33,6 @@ class PasswordsController < ApplicationController
     def set_user_by_token
       @user = User.find_by_password_reset_token!(params[:token])
     rescue ActiveSupport::MessageVerifier::InvalidSignature
-      redirect_to new_password_path, alert: "Password reset link is invalid or has expired."
+      render json: { error: "El enlace es inválido o expiró" }, status: :unprocessable_content
     end
 end
