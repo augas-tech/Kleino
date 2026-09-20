@@ -9,7 +9,7 @@ one:
   estado: MyString
 
 two:
-  usuario: two
+  user: two
   espacio: two
   fecha: 2026-09-19
   hora_inicio: 2026-09-19 14:04:28
