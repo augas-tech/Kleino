@@ -8,4 +8,9 @@ Rails.application.routes.draw do
 
   # Health check propio, usado por el pipeline de Jenkins.
   get "health" => "health#show", as: :health
+    namespace :api do
+    resources :sedes 
+    resources :espacios
+    resources :reservas
+  end
 end
