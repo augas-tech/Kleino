@@ -1,4 +1,5 @@
 class HealthController < ApplicationController
+  allow_unauthenticated_access
   # Endpoint liviano para el stage "Health Check" del pipeline y monitoreo.
   def show
     render json: { status: "ok", service: "kleino", time: Time.current.utc.iso8601 }

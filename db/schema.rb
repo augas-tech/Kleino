@@ -10,8 +10,62 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 0) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_19_170428) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
+  create_table "espacios", force: :cascade do |t|
+    t.integer "capacidad"
+    t.datetime "created_at", null: false
+    t.text "descripcion"
+    t.string "estado"
+    t.string "nombre"
+    t.bigint "sede_id", null: false
+    t.string "tipo"
+    t.string "ubicacion"
+    t.datetime "updated_at", null: false
+    t.index ["sede_id"], name: "index_espacios_on_sede_id"
+  end
+
+  create_table "reservas", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "espacio_id", null: false
+    t.string "estado"
+    t.date "fecha"
+    t.time "hora_fin"
+    t.time "hora_inicio"
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["espacio_id"], name: "index_reservas_on_espacio_id"
+    t.index ["user_id"], name: "index_reservas_on_user_id"
+  end
+
+  create_table "sedes", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "direccion"
+    t.string "nombre"
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "sessions", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "ip_address"
+    t.datetime "updated_at", null: false
+    t.string "user_agent"
+    t.bigint "user_id", null: false
+    t.index ["user_id"], name: "index_sessions_on_user_id"
+  end
+
+  create_table "users", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "email_address", null: false
+    t.string "password_digest", null: false
+    t.datetime "updated_at", null: false
+    t.index ["email_address"], name: "index_users_on_email_address", unique: true
+  end
+
+  add_foreign_key "espacios", "sedes"
+  add_foreign_key "reservas", "espacios"
+  add_foreign_key "reservas", "users"
+  add_foreign_key "sessions", "users"
 end
