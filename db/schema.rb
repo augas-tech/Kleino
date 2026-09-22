@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_19_170428) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_21_232456) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -18,24 +18,26 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_19_170428) do
     t.integer "capacidad"
     t.datetime "created_at", null: false
     t.text "descripcion"
-    t.string "estado"
-    t.string "nombre"
+    t.string "estado", default: "activo"
+    t.string "nombre", null: false
     t.bigint "sede_id", null: false
     t.string "tipo"
     t.string "ubicacion"
     t.datetime "updated_at", null: false
     t.index ["sede_id"], name: "index_espacios_on_sede_id"
+    t.check_constraint "capacidad > 0", name: "capacidad_positiva"
   end
 
   create_table "reservas", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.bigint "espacio_id", null: false
-    t.string "estado"
-    t.date "fecha"
-    t.time "hora_fin"
-    t.time "hora_inicio"
+    t.string "estado", default: "pendiente"
+    t.date "fecha", null: false
+    t.time "hora_fin", null: false
+    t.time "hora_inicio", null: false
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
+    t.index ["espacio_id", "fecha"], name: "index_reservas_on_espacio_id_and_fecha"
     t.index ["espacio_id"], name: "index_reservas_on_espacio_id"
     t.index ["user_id"], name: "index_reservas_on_user_id"
   end
@@ -43,7 +45,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_19_170428) do
   create_table "sedes", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "direccion"
-    t.string "nombre"
+    t.string "nombre", null: false
     t.datetime "updated_at", null: false
   end
 
