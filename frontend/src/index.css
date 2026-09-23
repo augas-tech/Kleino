@@ -1,0 +1,33 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-white text-navy font-sans antialiased;
+}
+
+@layer utilities {
+  /* Etiqueta pequeña, tracked, monoespaciada: "ESTUDIO", "CÓMO FUNCIONA", "EN VIVO" */
+  .eyebrow {
+    @apply font-mono text-[11px] font-medium uppercase tracking-[0.14em];
+  }
+
+  .card-lift {
+    @apply transition-shadow transition-transform duration-200 ease-out;
+  }
+  .card-lift:hover {
+    @apply -translate-y-0.5 shadow-lg;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card-lift,
+  html {
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
