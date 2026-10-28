@@ -30,3 +30,12 @@
 .idea/
 .vscode/
 .DS_Store
+
+/vendor/bundle
+node_modules/
+frontend/dist/
+jar
+cookies.txt
+*.zip
+frontend/.env
+frontend/.env.local
