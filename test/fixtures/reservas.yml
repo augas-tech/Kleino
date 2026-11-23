@@ -1,17 +1,17 @@
-# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
-
+# one: del usuario one en el espacio one (del admin) | two: del usuario two en el espacio two (de otro_admin)
 one:
   user: one
   espacio: one
-  fecha: 2026-09-19
-  hora_inicio: 2026-09-19 14:04:28
-  hora_fin: 2026-09-19 14:04:28
-  estado: MyString
+  fecha: <%= Date.current + 7 %>
+  hora_inicio: "10:00"
+  hora_fin: "11:00"
+  estado: pendiente
 
 two:
   user: two
   espacio: two
-  fecha: 2026-09-19
-  hora_inicio: 2026-09-19 14:04:28
-  hora_fin: 2026-09-19 14:04:28
-  estado: MyString
+  fecha: <%= Date.current + 7 %>
+  hora_inicio: "10:00"
+  hora_fin: "11:00"
+  estado: pendiente
+  

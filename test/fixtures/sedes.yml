@@ -1,9 +1,11 @@
-# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
-
+# one: sede del administrador; two: sede de otro administrador.
 one:
-  nombre: MyString
-  direccion: MyString
+  nombre: Sede Uno
+  direccion: Calle Uno 123
+  propietario: admin
 
 two:
-  nombre: MyString
-  direccion: MyString
+  nombre: Sede Dos
+  direccion: Calle Dos 456
+  propietario: otro_admin
+  
