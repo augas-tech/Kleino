@@ -35,7 +35,7 @@ pipeline {
         DOCKER_NETWORK   = 'course-net'
         APP_NAME         = 'kleino'
         POSTGRES_IMAGE   = 'postgres:16-alpine'
-        RUBY_IMAGE       = 'ruby:3.3.7-slim'
+        RUBY_IMAGE       = 'ruby:3.3.14-slim'
         BUNDLE_VOLUME    = 'kleino-bundle'
         DEPLOY_PORT      = '4102'
         PUBLIC_URL       = 'https://apikleino.frubilarz.cl'
@@ -87,7 +87,10 @@ pipeline {
             }
             steps {
                 script {
-                    docker.image(env.RUBY_IMAGE).inside("--network ${env.DOCKER_NETWORK} -u root:root -v ${env.BUNDLE_VOLUME}:/usr/local/bundle") {
+                    // `-u root:root` hace falta para apt-get y bundle install. Para que root no
+                    // escriba cache en el workspace (lo que rompe el checkout del build siguiente),
+                    // bootsnap se manda a /tmp del contenedor; el resto lo normaliza el post.
+                    docker.image(env.RUBY_IMAGE).inside("--network ${env.DOCKER_NETWORK} -u root:root -e BOOTSNAP_CACHE_DIR=/tmp/bootsnap -e TMPDIR=/tmp -v ${env.BUNDLE_VOLUME}:/usr/local/bundle") {
                         stage('Install deps') {
                             sh '''
                                 apt-get update -qq
@@ -108,7 +111,26 @@ pipeline {
                             sh 'bin/rails db:test:prepare'
                             sh 'bin/rails test'
                         }
+                        // El contenedor corre como root y deja archivos de root en el workspace
+                        // (log/test.log, tmp/...). Si quedan asi, el checkout del build siguiente
+                        // no puede limpiar el workspace ("Operation not permitted") y el pipeline
+                        // muere antes de compilar. Se devuelven al dueno del workspace (usuario
+                        // de Jenkins) desde dentro del propio contenedor, que ya lo tiene montado.
+                        stage('Normalizar permisos') {
+                            sh '''
+                                WORKSPACE_OWNER=$(stat -c '%u:%g' .)
+                                chown -R "$WORKSPACE_OWNER" . \
+                                  || echo "AVISO: no se pudo normalizar la propiedad del workspace"
+                            '''
+                        }
                     }
+                }
+            }
+            post {
+                always {
+                    // Sin `node` ni `sh` en el post del pipeline (el ejecutor es unico y se
+                    // quedaria esperando a si mismo); aqui el nodo del stage sigue disponible.
+                    sh 'docker rm -f "$DB_CONTAINER" >/dev/null 2>&1 || true'
                 }
             }
         }
@@ -222,9 +244,4 @@ pipeline {
         }
     }
 
-    post {
-        always {
-            sh 'docker rm -f "$DB_CONTAINER" >/dev/null 2>&1 || true'
-        }
-    }
 }
