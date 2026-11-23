@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_21_232456) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_22_120200) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -19,6 +19,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_21_232456) do
     t.datetime "created_at", null: false
     t.text "descripcion"
     t.string "estado", default: "activo"
+    t.time "hora_apertura"
+    t.time "hora_cierre"
     t.string "nombre", null: false
     t.bigint "sede_id", null: false
     t.string "tipo"
@@ -26,6 +28,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_21_232456) do
     t.datetime "updated_at", null: false
     t.index ["sede_id"], name: "index_espacios_on_sede_id"
     t.check_constraint "capacidad > 0", name: "capacidad_positiva"
+    t.check_constraint "hora_apertura IS NULL AND hora_cierre IS NULL OR hora_apertura IS NOT NULL AND hora_cierre IS NOT NULL AND hora_cierre > hora_apertura", name: "horario_valido"
   end
 
   create_table "reservas", force: :cascade do |t|
@@ -46,7 +49,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_21_232456) do
     t.datetime "created_at", null: false
     t.string "direccion"
     t.string "nombre", null: false
+    t.bigint "propietario_id"
     t.datetime "updated_at", null: false
+    t.index ["propietario_id"], name: "index_sedes_on_propietario_id"
   end
 
   create_table "sessions", force: :cascade do |t|
@@ -62,12 +67,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_21_232456) do
     t.datetime "created_at", null: false
     t.string "email_address", null: false
     t.string "password_digest", null: false
+    t.string "rol", default: "usuario", null: false
     t.datetime "updated_at", null: false
     t.index ["email_address"], name: "index_users_on_email_address", unique: true
+    t.check_constraint "rol::text = ANY (ARRAY['usuario'::character varying, 'administrador'::character varying]::text[])", name: "rol_valido"
   end
 
   add_foreign_key "espacios", "sedes"
   add_foreign_key "reservas", "espacios"
   add_foreign_key "reservas", "users"
+  add_foreign_key "sedes", "users", column: "propietario_id"
   add_foreign_key "sessions", "users"
 end
