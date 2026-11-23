@@ -1,4 +1,6 @@
-// CI/CD de Kleino (Rails 8 API + PostgreSQL) para jenkins.frubilarz.cl.
+// CI/CD de Kleino para jenkins.frubilarz.cl.
+//
+// Monorepo: la API Rails 8 (+ PostgreSQL) vive en la raiz y el frontend React/Vite en frontend/.
 //
 // El servidor Jenkins tiene un solo executor y Docker disponible. Todas las etapas
 // de CI corren dentro de contenedores efimeros conectados a la red Docker externa
@@ -6,11 +8,19 @@
 // por build y destruido al terminar (no depende de ninguna DB compartida).
 //
 // Flujo:
-//   Checkout -> Test DB -> Install deps -> Lint -> Security -> Test -> Build image
-//   (solo rama `production`) -> Deploy -> Health Check
+//   Checkout -> Test DB -> Backend: Install deps -> Lint -> Security -> Test
+//   -> Backend: Build image -> Frontend: Build image (compila con Vite dentro del Dockerfile)
+//   (solo rama `production`)
+//   -> Backend: Deploy -> Backend: Health Check (el entrypoint migra al arrancar)
+//   -> Frontend: Deploy -> Frontend: Health Check
 //
-// Produccion: el contenedor se publica en 127.0.0.1:4102 y el reverse proxy del
-// servidor (Nginx) expone https://kleino.frubilarz.cl hacia ese puerto.
+// Nada se despliega si falla la CI/build de cualquiera de los dos.
+//
+// Produccion: cada contenedor se publica en loopback y el reverse proxy del servidor
+// (Nginx + Certbot) expone el dominio publico hacia ese puerto.
+//   backend  127.0.0.1:4102 -> https://apikleino.frubilarz.cl
+//   frontend 127.0.0.1:4105 -> https://kleino.frubilarz.cl
+// El backend recibe CORS_ORIGINS con el origen del frontend (config/initializers/cors.rb).
 pipeline {
     agent any
 
@@ -28,7 +38,14 @@ pipeline {
         RUBY_IMAGE       = 'ruby:3.3.7-slim'
         BUNDLE_VOLUME    = 'kleino-bundle'
         DEPLOY_PORT      = '4102'
-        PUBLIC_URL       = 'https://kleino.frubilarz.cl'
+        PUBLIC_URL       = 'https://apikleino.frubilarz.cl'
+
+        FRONTEND_APP_NAME    = 'kleino-frontend'
+        FRONTEND_DIR         = 'frontend'
+        FRONTEND_DEPLOY_PORT = '4105'
+        FRONTEND_PUBLIC_URL  = 'https://kleino.frubilarz.cl'
+        // Vite incrusta esta URL en el bundle al compilar (ver frontend/Dockerfile).
+        FRONTEND_API_URL     = 'https://apikleino.frubilarz.cl'
     }
 
     stages {
@@ -40,6 +57,7 @@ pipeline {
                     env.SAFE_BRANCH  = safeBranch
                     env.DB_CONTAINER = "${APP_NAME}-test-db-${safeBranch}-${env.BUILD_NUMBER}"
                     env.IMAGE_TAG    = "${APP_NAME}:${safeBranch}-${env.BUILD_NUMBER}"
+                    env.FRONTEND_IMAGE_TAG = "${FRONTEND_APP_NAME}:${safeBranch}-${env.BUILD_NUMBER}"
                 }
             }
         }
@@ -62,7 +80,7 @@ pipeline {
             }
         }
 
-        stage('Build & Test') {
+        stage('Backend: Build & Test') {
             environment {
                 DATABASE_URL = "postgres://postgres:postgres@${env.DB_CONTAINER}:5432"
                 BUNDLE_PATH  = '/usr/local/bundle'
@@ -95,13 +113,26 @@ pipeline {
             }
         }
 
-        stage('Build image') {
+        stage('Backend: Build image') {
             steps {
                 sh 'docker build -t "$IMAGE_TAG" -t "$APP_NAME:$SAFE_BRANCH" .'
             }
         }
 
-        stage('Deploy') {
+        stage('Frontend: Build image') {
+            steps {
+                // npm ci + vite build corren dentro del Dockerfile (multi-stage); no se duplica
+                // el build en un contenedor aparte para no gastar RAM en el droplet de 2 GB.
+                sh '''
+                    docker build \
+                      --build-arg VITE_API_URL="$FRONTEND_API_URL" \
+                      -t "$FRONTEND_IMAGE_TAG" -t "$FRONTEND_APP_NAME:$SAFE_BRANCH" \
+                      "$FRONTEND_DIR"
+                '''
+            }
+        }
+
+        stage('Backend: Deploy') {
             when { branch 'production' }
             steps {
                 withCredentials([
@@ -118,13 +149,14 @@ pipeline {
                           -e RAILS_ENV=production \
                           -e RAILS_MASTER_KEY="$RAILS_MASTER_KEY" \
                           -e DATABASE_URL="$PROD_DATABASE_URL" \
+                          -e CORS_ORIGINS="$FRONTEND_PUBLIC_URL" \
                           "$IMAGE_TAG"
                     '''
                 }
             }
         }
 
-        stage('Health Check') {
+        stage('Backend: Health Check') {
             when { branch 'production' }
             steps {
                 // Las migraciones las corre bin/docker-entrypoint (`rails db:prepare`) antes
@@ -149,6 +181,42 @@ pipeline {
                     done
                     # Verificacion publica a traves del reverse proxy (no bloquea si el proxy aun no esta configurado).
                     curl -fsS "$PUBLIC_URL/health" && echo || echo "AVISO: $PUBLIC_URL/health no responde; revisar Nginx/DNS en el servidor"
+                '''
+            }
+        }
+
+        stage('Frontend: Deploy') {
+            when { branch 'production' }
+            steps {
+                sh '''
+                    docker rm -f "$FRONTEND_APP_NAME" || true
+                    docker run -d \
+                      --name "$FRONTEND_APP_NAME" \
+                      --restart unless-stopped \
+                      -p 127.0.0.1:$FRONTEND_DEPLOY_PORT:80 \
+                      "$FRONTEND_IMAGE_TAG"
+                '''
+            }
+        }
+
+        stage('Frontend: Health Check') {
+            when { branch 'production' }
+            steps {
+                // nginx:alpine trae wget (busybox) pero no curl; se ejecuta dentro del contenedor
+                // porque el 127.0.0.1 de Jenkins no es el del host.
+                sh '''
+                    for i in $(seq 1 20); do
+                      if docker exec "$FRONTEND_APP_NAME" wget -qO- http://127.0.0.1/health; then break; fi
+                      if [ "$(docker inspect -f '{{.State.Running}}' "$FRONTEND_APP_NAME" 2>/dev/null)" != "true" ]; then
+                        echo "El contenedor $FRONTEND_APP_NAME no esta corriendo"; docker logs --tail 50 "$FRONTEND_APP_NAME"; exit 1
+                      fi
+                      if [ "$i" = 20 ]; then echo "Timeout: $FRONTEND_APP_NAME no respondio en 60 s"; docker logs --tail 50 "$FRONTEND_APP_NAME"; exit 1; fi
+                      sleep 3
+                    done
+                    # La raiz debe devolver el index.html de la SPA.
+                    docker exec "$FRONTEND_APP_NAME" wget -qO- http://127.0.0.1/ | grep -q '<div id="root">'
+                    curl -fsS -o /dev/null "$FRONTEND_PUBLIC_URL/" && echo "$FRONTEND_PUBLIC_URL OK" \
+                      || echo "AVISO: $FRONTEND_PUBLIC_URL no responde; revisar Nginx/Certbot en el servidor"
                 '''
             }
         }
