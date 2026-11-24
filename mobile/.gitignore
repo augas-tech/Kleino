@@ -40,3 +40,7 @@ yarn-error.*
 /ios
 /android
 .env
+
+# Configuración local de asistentes de IA
+.claude/
+AGENTS.md

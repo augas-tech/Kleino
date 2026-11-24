@@ -22,13 +22,13 @@ npx expo start -c
 | Teléfono en la misma WiFi | `http://IP_DEL_PC:3000` |
 | API desplegada | `https://apikleino.frubilarz.cl` |
 
-Si cambias el `.env`, reinicia con `npx expo start -c`.
+`EXPO_PUBLIC_API_URL` es obligatoria: la URL no está escrita en el código. Si cambias el `.env`, reinicia con `npx expo start -c`.
 
 ## Usuarios de prueba
 | Rol | Correo | Contraseña |
 |---|---|---|
-| Administrador | `docente@kleino.cl` | `kleino2026` |
-| Usuario registrado | `alumno@kleino.cl` | `kleino2026` |
+| Administrador | `admin@kleino.cl` | `kleino2026` |
+| Usuario registrado | `docente@kleino.cl` | `kleino2026` |
 
 ## Autenticación
 - El login envía `X-Client: mobile` a `POST /session`. La API responde `{ user, token }` sin cookie.

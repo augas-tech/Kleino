@@ -10,8 +10,6 @@
     "expo": "~58.0.26",
     "expo-secure-store": "~58.0.3",
     "expo-status-bar": "~58.0.5",
-    "jest": "~30.5.2",
-    "jest-expo": "~58.0.15",
     "react": "19.3.0",
     "react-native": "0.88.1",
     "react-native-safe-area-context": "~5.11.1",
@@ -26,9 +24,14 @@
   },
   "private": true,
   "devDependencies": {
-    "@testing-library/react-native": "^14.1.0"
+    "@testing-library/react-native": "^14.1.0",
+    "jest": "^30.5.2",
+    "jest-expo": "^58.0.15"
   },
   "jest": {
-    "preset": "jest-expo"
+    "preset": "jest-expo",
+    "setupFiles": [
+      "./jest.setup.js"
+    ]
   }
 }
