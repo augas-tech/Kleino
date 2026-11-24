@@ -44,6 +44,14 @@ export default function EspacioDetalleScreen({ route, navigation }) {
           <Text style={s.buttonText}>Reservar este espacio</Text>
         </Pressable>
       )}
+      {esAdmin && (
+        <Pressable
+          style={s.button} accessibilityRole="button"
+          onPress={() => navigation.navigate("EspacioForm", { espacio })}
+        >
+          <Text style={s.buttonText}>Editar espacio</Text>
+        </Pressable>
+      )}
       {!esAdmin && !activo && <Text style={s.aviso}>Este espacio no está disponible para reservar.</Text>}
     </ScrollView>
   );

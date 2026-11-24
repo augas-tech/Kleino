@@ -40,6 +40,11 @@ export default function EspaciosScreen({ navigation }) {
 
   return (
     <View style={s.container}>
+      {esAdmin && (
+        <Pressable style={s.nuevo} accessibilityRole="button" onPress={() => navigation.navigate("EspacioForm")}>
+          <Text style={s.nuevoText}>+ Nuevo espacio</Text>
+        </Pressable>
+      )}
       <TextInput
         style={s.search} placeholder="Buscar por nombre, tipo o ubicación"
         value={query} onChangeText={setQuery} accessibilityLabel="Buscar espacios"
@@ -80,4 +85,6 @@ const s = StyleSheet.create({
   inactivo: { marginTop: 6, color: "#b91c1c", fontWeight: "600" },
   error: { color: "#b91c1c", marginBottom: 12 },
   empty: { textAlign: "center", color: "#64748b", marginTop: 32 },
+  nuevo: { backgroundColor: "#2563eb", padding: 12, borderRadius: 8, alignItems: "center", marginBottom: 12 },
+  nuevoText: { color: "#fff", fontWeight: "600", fontSize: 16 },
 });
