@@ -80,7 +80,7 @@ Reglas de negocio validadas en el modelo `Reserva`:
 
 ## Stack tecnológico
 
-- **Backend:** Ruby 3.3.7, Ruby on Rails 8.1 (`api_only`), PostgreSQL
+- **Backend:** Ruby 3.3.14, Ruby on Rails 8.1 (`api_only`), PostgreSQL
 - **Autenticación:** sesión con cookie firmada (web) y `bcrypt` para el hash de contraseña
 - **CORS:** gema `rack-cors`
 - **Web:** React 18, Vite, React Router y Tailwind CSS
@@ -89,7 +89,7 @@ Reglas de negocio validadas en el modelo `Reserva`:
 
 ## Cómo correr en local
 
-Requisitos: Ruby 3.3.7 (ver `.ruby-version`), PostgreSQL corriendo localmente
+Requisitos: Ruby 3.3.14 (ver `.ruby-version`), PostgreSQL corriendo localmente
 (o una `DATABASE_URL` apuntando a uno), Bundler y Node.js LTS.
 
 ### API
