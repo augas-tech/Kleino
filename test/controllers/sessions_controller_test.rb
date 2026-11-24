@@ -49,4 +49,50 @@ class SessionsControllerTest < ActionDispatch::IntegrationTest
     assert_response :no_content
     assert_empty cookies[:session_id]
   end
+
+  test "login movil devuelve token y no crea cookie" do
+    post session_path, params: { email_address: @user.email_address, password: "password" },
+         headers: { "X-Client" => "mobile" }, as: :json
+
+    assert_response :created
+    assert response.parsed_body["token"].present?
+    assert_nil cookies[:session_id]
+  end
+
+  test "login web no devuelve token" do
+    post session_path, params: { email_address: @user.email_address, password: "password" }, as: :json
+
+    assert_response :created
+    assert_nil response.parsed_body["token"]
+    assert cookies[:session_id]
+  end
+
+  test "show con token valido" do
+    post session_path, params: { email_address: @user.email_address, password: "password" },
+         headers: { "X-Client" => "mobile" }, as: :json
+    token = response.parsed_body["token"]
+
+    get session_path, headers: { "Authorization" => "Bearer #{token}" }
+
+    assert_response :success
+    assert_equal @user.email_address, response.parsed_body.dig("user", "email_address")
+  end
+
+  test "show con token invalido" do
+    get session_path, headers: { "Authorization" => "Bearer token-falso" }
+
+    assert_response :unauthorized
+  end
+
+  test "logout revoca el token" do
+    post session_path, params: { email_address: @user.email_address, password: "password" },
+         headers: { "X-Client" => "mobile" }, as: :json
+    auth = { "Authorization" => "Bearer #{response.parsed_body['token']}" }
+
+    delete session_path, headers: auth
+    assert_response :no_content
+
+    get session_path, headers: auth
+    assert_response :unauthorized
+  end
 end
