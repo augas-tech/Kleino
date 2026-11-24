@@ -30,6 +30,20 @@ class UserTest < ActiveSupport::TestCase
   end
 
   test "as_public_json does not expose the password digest" do
-    assert_equal %i[ email_address id ], users(:one).as_public_json.keys.sort
+    assert_equal %i[ email_address id rol ], users(:one).as_public_json.keys.sort
+  end
+    test "el rol por defecto es usuario" do
+    user = User.new(email_address: "nuevo@example.com", password: "clave12345")
+
+    assert_equal "usuario", user.rol
+    assert user.usuario?
+    assert_not user.administrador?
+  end
+
+  test "no acepta un rol inválido" do
+    user = users(:one)
+    user.rol = "superadmin"
+
+    assert_not user.valid?
   end
 end

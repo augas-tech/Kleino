@@ -1,19 +1,30 @@
-# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
-
+# one: activo, sede del admin | two: activo, sede de otro_admin | cerrado: inactivo, sede del admin
 one:
-  nombre: MyString
-  tipo: MyString
-  capacidad: 1
-  ubicacion: MyString
-  descripcion: MyText
-  estado: MyString
+  nombre: Sala Uno
+  tipo: sala_reunion
+  capacidad: 8
+  ubicacion: Piso 1
+  descripcion: Sala de prueba
+  estado: activo
+  hora_apertura: "08:00"
+  hora_cierre: "20:00"
   sede: one
 
 two:
-  nombre: MyString
-  tipo: MyString
-  capacidad: 1
-  ubicacion: MyString
-  descripcion: MyText
-  estado: MyString
+  nombre: Sala Dos
+  tipo: sala_reunion
+  capacidad: 6
+  ubicacion: Piso 2
+  descripcion: Sala de otro administrador
+  estado: activo
   sede: two
+
+cerrado:
+  nombre: Sala Cerrada
+  tipo: cancha
+  capacidad: 10
+  ubicacion: Patio
+  descripcion: Espacio deshabilitado
+  estado: inactivo
+  sede: one
+  

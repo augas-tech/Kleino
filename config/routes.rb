@@ -5,7 +5,9 @@ Rails.application.routes.draw do
 
   resources :sedes, only: %i[ index show create update destroy ]
   resources :espacios, only: %i[ index show create update destroy ]
-  resources :reservas, only: %i[ index show create update destroy ]
+  resources :reservas, only: %i[ index show create update destroy ] do
+    member { patch :cancelar }
+  end
 
   # Health check por defecto de Rails (200 si la app bootea sin excepciones).
   get "up" => "rails/health#show", as: :rails_health_check
