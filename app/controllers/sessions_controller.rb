@@ -13,7 +13,7 @@ class SessionsController < ApplicationController
 
     if user
       start_new_session_for user
-      render json: { user: user.as_public_json }, status: :created
+      render json: session_payload(user), status: :created
     else
       render json: { error: "Email o contraseña incorrectos" }, status: :unauthorized
     end

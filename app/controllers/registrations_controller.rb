@@ -8,7 +8,7 @@ class RegistrationsController < ApplicationController
 
     if user.save
       start_new_session_for user
-      render json: { user: user.as_public_json }, status: :created
+      render json: session_payload(user), status: :created
     else
       render json: { errors: user.errors.full_messages }, status: :unprocessable_content
     end
