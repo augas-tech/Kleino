@@ -9,6 +9,7 @@ import EspacioDetalleScreen from "../screens/EspacioDetalleScreen";
 import ReservaFormScreen from "../screens/ReservaFormScreen";
 import MisReservasScreen from "../screens/MisReservasScreen";
 import PerfilScreen from "../screens/PerfilScreen";
+import EspacioFormScreen from "../screens/EspacioFormScreen";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -34,7 +35,7 @@ function Tabs() {
 }
 
 export default function AppNavigator() {
-  const { user, restoring } = useAuth();
+  const { user, restoring, esAdmin } = useAuth();
 
   if (restoring) {
     return (
@@ -52,6 +53,7 @@ export default function AppNavigator() {
             <Stack.Screen name="Tabs" component={Tabs} options={{ headerShown: false }} />
             <Stack.Screen name="EspacioDetalle" component={EspacioDetalleScreen} options={{ title: "Detalle" }} />
             <Stack.Screen name="ReservaForm" component={ReservaFormScreen} options={{ title: "Reserva" }} />
+            {esAdmin && <Stack.Screen name="EspacioForm" component={EspacioFormScreen} options={{ title: "Espacio" }} />}
           </>
         ) : (
           <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />

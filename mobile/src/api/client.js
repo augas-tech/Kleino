@@ -1,6 +1,5 @@
 import * as SecureStore from "expo-secure-store";
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://10.0.2.2:3000";
 const TOKEN_KEY = "kleino_token";
 const TIMEOUT_MS = 10000;
 
@@ -37,11 +36,14 @@ export async function request(path, { method = "GET", body, auth = true } = {}) 
     if (token) headers.Authorization = `Bearer ${token}`;
   }
 
+  const apiUrl = process.env.EXPO_PUBLIC_API_URL;
+  if (!apiUrl) throw new ApiError("Falta configurar EXPO_PUBLIC_API_URL en mobile/.env.", 0);
+
   let res;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
   try {
-    res = await fetch(`${API_URL}${path}`, {
+    res = await fetch(`${apiUrl}${path}`, {
       method,
       headers,
       body: body ? JSON.stringify(body) : undefined,
