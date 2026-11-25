@@ -1,3 +1,4 @@
+import { demoRequest } from "./demo";
 import * as SecureStore from "expo-secure-store";
 
 const TOKEN_KEY = "kleino_token";
@@ -26,6 +27,7 @@ const MESSAGES = {
 };
 
 export async function request(path, { method = "GET", body, auth = true } = {}) {
+  if (process.env.EXPO_PUBLIC_DEMO === "true") return demoRequest(path, { method, body });
   const headers = {
     "Content-Type": "application/json",
     Accept: "application/json",
